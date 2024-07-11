@@ -1,8 +1,24 @@
+import os
+import toml
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
+
+# Define o caminho para o arquivo .toml
+SECRETS_FILE = os.path.join('.secrets', 'secrets.toml')
+
+# Carrega as variáveis do arquivo .toml
+with open(SECRETS_FILE, 'r') as f:
+    secrets = toml.load(f)
+
+# Verifica se as chaves 'credentials', 'username' e 'password' existem no dicionário
+if 'credentials' in secrets and 'username' in secrets['credentials'] and 'password' in secrets['credentials']:
+    user = secrets['credentials']['username']
+    password_value = secrets['credentials']['password']
+else:
+    raise KeyError("As chaves 'credentials', 'username' ou 'password' não foram encontradas no arquivo .toml.")
 
 # Configuração do Selenium
 driver = webdriver.Chrome()  # Você pode mudar o driver de acordo com seu navegador
@@ -12,33 +28,28 @@ try:
     driver.get("https://www.clubedepromos.com.br/#/minoristas/promociones/listado?vigente=1&estado=PENDIENTE")
 
     # Aguarda até que o campo de usuário seja visível e preenche
-    username = WebDriverWait(driver, 10).until(
+    username_input = WebDriverWait(driver, 10).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, 'input[formcontrolname="username"]'))
     )
-    username.send_keys("DSOUZA")
+    username_input.send_keys(user)
 
     # Aguarda até que o campo de senha seja visível e preenche
-    password = WebDriverWait(driver, 10).until(
+    password_input = WebDriverWait(driver, 10).until(
         EC.visibility_of_element_located((By.CSS_SELECTOR, 'input[formcontrolname="password"]'))
     )
-    password.send_keys("DIEGO24997")
+    password_input.send_keys(password_value)
 
     # Envia o formulário de login pressionando Enter no campo de senha
-    password.send_keys(Keys.ENTER)
+    password_input.send_keys(Keys.ENTER)
 
-    link_radio = WebDriverWait(driver, 10).until(
-        EC.element_to_be_clickable((By.XPATH, '//a[contains(@href, "#/minoristas/promociones/listado?vigente=1&estado=ACEPTADA")]'))
+    # Aguarda até que o link do estado 'ACEPTADA' esteja visível e clica nele
+    link_element = WebDriverWait(driver, 10).until(
+        EC.presence_of_element_located((By.CSS_SELECTOR, "a[href*='#/minoristas/promociones/listado?vigente=1'][href*='estado=ACEPTADA']"))
     )
-    link_radio.click()
+    link_element.click()
     #<a _ngcontent-xrk-c12="" href="#/minoristas/promociones/listado?vigente=1&amp;estado=ACEPTADA"><input _ngcontent-xrk-c12="" class="e2e-estado-radiobutton" type="radio" id="ACEPTADA"><label _ngcontent-xrk-c12="" for="ACEPTADA"> Aceita <!----><span _ngcontent-xrk-c12="" class="cantidad text-size-xs-cpm ng-star-inserted">(84)</span></label></a>
 
-    #link_produto = WebDriverWait(driver, 10).until(
-    #    EC.element_to_be_clickable((By.XPATH, '//a[@class="e2e-btn-redireccionar"]'))
-    #)
-    #link_produto.click()
-    #<a _ngcontent-xrk-c26="" class="e2e-btn-redireccionar" href="#/minoristas/promociones/ofrecidas/1405078"><h3 _ngcontent-xrk-c26="" class="titulo-sm font-w-700-cpm mt-0 mb-0">POR R$ 12,45 NO AMACIANTE COMFORT 500ML</h3></a>
-    
-    # Aguarda até que o elemento esteja visível após o login
+    # Aguarda até que os spans estejam visíveis após o clique na promoção
     gtins = WebDriverWait(driver, 10).until(
         EC.presence_of_all_elements_located((By.XPATH, '//span[contains(@class, "font-w-500-cpm")]'))
     )
@@ -46,6 +57,9 @@ try:
     # Itera sobre os spans e imprime seus textos
     for span in gtins:
         print("Texto do span:", span.text)
+
+    # Volta uma página
+    driver.back()
 
 finally:
     # Fecha o navegador
