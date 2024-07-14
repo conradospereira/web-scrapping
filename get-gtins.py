@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
 # Define o caminho para o arquivo .toml
-SECRETS_FILE = os.path.join('.secrets', 'secrets.toml')
+SECRETS_FILE = os.path.join('secrets.toml')
 
 # Carrega as variáveis do arquivo .toml
 with open(SECRETS_FILE, 'r') as f:
